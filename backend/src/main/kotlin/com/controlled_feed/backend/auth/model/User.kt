@@ -9,7 +9,7 @@ data class User (
     @Column (nullable = false ,unique = true)
     var email: String = "",
     @Column(nullable = false)
-    var password: String = "",
+    var password: String? = "",
     @Column(nullable = false)
     var name: String = "",
     @Column(nullable = false)
