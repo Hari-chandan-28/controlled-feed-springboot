@@ -10,7 +10,7 @@ class AuthService (
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService
 ){
-    fun signUp(username: String, email: String, password: String): String {
+    fun signup(username: String, email: String, password: String): String {
         if(userRepository.existsByEmail(email))
         {
             throw RuntimeException("Email already exists")
