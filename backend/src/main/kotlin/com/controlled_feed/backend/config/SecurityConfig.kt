@@ -1,4 +1,5 @@
 package com.controlled_feed.backend.config
+
 import com.controlled_feed.backend.auth.filter.JwtAuthFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -12,7 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private  val jwtAuthFilter: JwtAuthFilter) {
+class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder {
@@ -23,12 +24,15 @@ class SecurityConfig(private  val jwtAuthFilter: JwtAuthFilter) {
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/signup").permitAll()
+                    .requestMatchers("/api/auth/login").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
