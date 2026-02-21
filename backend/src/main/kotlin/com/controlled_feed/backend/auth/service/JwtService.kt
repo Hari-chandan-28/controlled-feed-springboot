@@ -1,9 +1,7 @@
 package com.controlled_feed.backend.auth.service
-import com.controlled_feed.backend.auth.model.User
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
-import org.antlr.v4.runtime.Token
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.Date
@@ -25,7 +23,7 @@ class JwtService {
             .compact()
     }
 
-    fun extractEmail(token: String): String {
+    fun extractEmail(token: String?): String {
         return Jwts.parserBuilder()
             .setSigningKey(Keys.hmacShaKeyFor(secret.toByteArray()))
             .build()
@@ -33,7 +31,7 @@ class JwtService {
             .body
             .subject
     }
-    fun isTokenValid(token: String): Boolean {
+    fun isTokenValid(token: String?): Boolean {
         return try {
             Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(secret.toByteArray()))
