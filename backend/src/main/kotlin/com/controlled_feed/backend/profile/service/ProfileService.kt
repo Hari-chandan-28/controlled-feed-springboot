@@ -38,4 +38,5 @@ class ProfileService(private val profileRepository: ProfileRepository,
         val updatedProfile = profile.copy(profilePicturePath = picturePath)
         return profileRepository.save(updatedProfile)
     }
+
 }
