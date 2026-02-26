@@ -33,6 +33,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                 it
                     .requestMatchers("/api/auth/signup").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers("/api/profile/upload-picture").authenticated()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
