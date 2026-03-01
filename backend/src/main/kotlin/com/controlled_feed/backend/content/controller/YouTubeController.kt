@@ -1,5 +1,6 @@
 package com.controlled_feed.backend.content.controller
 
+import com.controlled_feed.backend.content.model.Video
 import com.controlled_feed.backend.content.service.YouTubeService
 import org.hibernate.validator.internal.util.logging.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -13,13 +14,13 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/youtube")
 class YouTubeController (private val youTubeService: YouTubeService) {
     @GetMapping("/f1")
-    fun getF1Videos(): ResponseEntity<String>{
-        val respose = youTubeService.fetchF1Videos()
-        return ResponseEntity.ok(respose)
+    fun fetchF1Videos(): ResponseEntity<List<Video>>{
+        val videos = youTubeService.fetchAndStoreF1Videos()
+        return ResponseEntity.ok(videos)
     }
     @GetMapping("/icc")
-    fun getICCVideos(): ResponseEntity<String>{
-        val respose = youTubeService.fetchICCVideos()
-        return ResponseEntity.ok(respose)
+    fun fetchICCVideos(): ResponseEntity<List<Video>>{
+        val videos = youTubeService.fetchAndStoreICCVideos()
+        return ResponseEntity.ok(videos)
     }
 }

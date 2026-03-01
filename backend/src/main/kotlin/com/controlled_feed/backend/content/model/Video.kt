@@ -18,6 +18,10 @@ data class Video (
     val description: String = "",
     @Column(nullable = false)
     val thumbnailUrl: String = "",
+    @Column(nullable = false)
+    val publishedAt: String = "",
+    @Column(nullable = false)
+    val channelTitle: String = "",
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val category: VideoCategory = VideoCategory.F1
