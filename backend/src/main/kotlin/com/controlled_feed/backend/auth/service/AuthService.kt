@@ -1,6 +1,8 @@
 package com.controlled_feed.backend.auth.service
 import com.controlled_feed.backend.auth.model.User
 import com.controlled_feed.backend.auth.repository.UserRepository
+import com.controlled_feed.backend.common.*
+import com.controlled_feed.backend.common.UnauthorizedException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -13,7 +15,7 @@ class AuthService (
     fun signup(username: String, email: String, password: String): String {
         if(userRepository.existsByEmail(email))
         {
-            throw RuntimeException("Email already exists")
+            throw AlreadyExistsException("Email already registered!")
         }
         val user =User(
             name = username,
@@ -26,9 +28,9 @@ class AuthService (
     }
     fun login(email: String, password: String): String {
             val user = userRepository.findByEmail(email)
-                .orElseThrow{ RuntimeException("User not found") }
+                .orElseThrow{ ResourceNotFoundException("User not found!") }
             if(!passwordEncoder.matches(password, user.password)){
-                throw RuntimeException("Passwords do not match")
+                throw UnauthorizedException("Invalid password!")
             }
         return jwtService.generateToken(user.email)
     }

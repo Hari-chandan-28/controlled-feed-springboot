@@ -1,5 +1,5 @@
 package com.controlled_feed.backend.content.service
-
+import com.controlled_feed.backend.common.*
 import com.controlled_feed.backend.auth.repository.UserRepository
 import com.controlled_feed.backend.content.model.Video
 import com.controlled_feed.backend.content.model.VideoCategory
@@ -18,9 +18,9 @@ class FeedService(
     private val videoRepository: VideoRepository) {
     fun getFeed(email: String,page:Int,size:Int): List<Video> {
         val user=userRepository.findByEmail(email)
-            .orElseThrow{ Exception("User not found email address") }
+            .orElseThrow{ ResourceNotFoundException("User not found!") }
         val profile = profileRepository.findByUserId(user.id)
-            .orElseThrow{RuntimeException("Profile not found!")}
+            .orElseThrow{ResourceNotFoundException("Profile not found!")}
         val genre = profile.genres.map{genre ->
             VideoCategory.valueOf(genre.name)
         }
