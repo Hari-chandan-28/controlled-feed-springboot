@@ -33,6 +33,10 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                 it
                     .requestMatchers("/api/auth/signup").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers("/error").permitAll()
+                    .requestMatchers("/swagger-ui/**").permitAll()
+                    .requestMatchers("/api-docs/**").permitAll()
+                    .requestMatchers("/swagger-ui.html").permitAll()
                     .requestMatchers("/api/profile/upload-picture").authenticated()
                     .anyRequest().authenticated()
             }

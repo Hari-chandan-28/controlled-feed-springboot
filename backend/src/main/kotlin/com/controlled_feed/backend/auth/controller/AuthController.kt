@@ -1,5 +1,6 @@
 package com.controlled_feed.backend.auth.controller
 import com.controlled_feed.backend.auth.service.AuthService
+import jakarta.validation.Valid
 import jakarta.validation.constraints.*
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -12,7 +13,7 @@ class AuthController(
     private val authService: AuthService
 ){
     @PostMapping("/signup")
-    fun signup(@RequestBody request: SignupRequest): ResponseEntity<Any>{
+    fun signup(@Valid @RequestBody request: SignupRequest): ResponseEntity<Any>{
             val token = authService.signup(
                 username = request.name,
                 email = request.email,
@@ -21,7 +22,7 @@ class AuthController(
         return ResponseEntity.ok(AuthResponse(token))
     }
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest): ResponseEntity<Any>
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<Any>
     {
         val token = authService.login(
             email = request.email,
