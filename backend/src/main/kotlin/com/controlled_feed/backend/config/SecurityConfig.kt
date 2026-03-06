@@ -1,6 +1,8 @@
 package com.controlled_feed.backend.config
 
 import com.controlled_feed.backend.auth.filter.JwtAuthFilter
+import com.controlled_feed.backend.common.RateLimitFilter
+import jakarta.servlet.Filter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -13,7 +15,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
+class SecurityConfig(
+    private val jwtAuthFilter: JwtAuthFilter,
+    private val rateLimitFilter: RateLimitFilter) {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder {
@@ -40,6 +44,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                     .requestMatchers("/api/profile/upload-picture").authenticated()
                     .anyRequest().authenticated()
             }
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
     }
