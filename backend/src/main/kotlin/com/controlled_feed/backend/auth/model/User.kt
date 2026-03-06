@@ -1,7 +1,11 @@
 package com.controlled_feed.backend.auth.model
 import jakarta.persistence.*
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+    indexes = [
+        Index(name = "idx_user_email", columnList = "email",unique = true)
+    ]
+)
 data class User (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

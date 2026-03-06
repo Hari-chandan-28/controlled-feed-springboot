@@ -1,11 +1,18 @@
 package com.controlled_feed.backend.content.model
 import jakarta.persistence.*
+import java.io.Serializable
 
 enum class VideoCategory {
     F1,CRICKET
 }
 @Entity
-@Table(name = "videos")
+@Table(name = "videos",
+    indexes = [
+        Index(name="idx_video_category", columnList = "category"),
+        Index(name = "idx_video_published_at", columnList = "publishedAt"),
+        Index(name="idx_video_id",columnList = "videoId",unique = true)
+    ]
+)
 data class Video (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +32,4 @@ data class Video (
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val category: VideoCategory = VideoCategory.F1
-)
+): Serializable

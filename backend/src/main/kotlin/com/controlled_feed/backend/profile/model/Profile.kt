@@ -8,7 +8,10 @@ enum class Genre {
 }
 
 @Entity
-@Table(name = "profiles")
+@Table(name = "profiles",
+    indexes = [
+        Index(name = "isx_profile_user_id",columnList = "user_id",unique = true)
+    ])
 data class Profile(
 
     @Id
