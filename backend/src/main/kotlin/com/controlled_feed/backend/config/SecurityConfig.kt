@@ -41,6 +41,7 @@ class SecurityConfig(
                     .requestMatchers("/swagger-ui/**").permitAll()
                     .requestMatchers("/api-docs/**").permitAll()
                     .requestMatchers("/swagger-ui.html").permitAll()
+                    .requestMatchers("/actuator/health/**").permitAll()
                     .requestMatchers("/api/profile/upload-picture").authenticated()
                     .anyRequest().authenticated()
             }
