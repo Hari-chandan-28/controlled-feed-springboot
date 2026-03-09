@@ -3,6 +3,8 @@ package com.controlled_feed.backend.content.service
 import com.controlled_feed.backend.content.model.Video
 import com.controlled_feed.backend.content.model.VideoCategory
 import com.controlled_feed.backend.content.repository.VideoRepository
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
+import io.github.resilience4j.spring6.fallback.FallbackMethod
 import tools.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -28,37 +30,46 @@ class YouTubeService(
     private val webClient: WebClient = WebClient.builder()
         .baseUrl("https://www.googleapis.com/youtube/v3")
         .build()
-    @Retryable(
-        retryFor = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 2000, multiplier = 2.0)
-    )
+    @CircuitBreaker(name = "youtubeService" , fallbackMethod = "fallbackF1Videos")
     fun fetchAndStoreF1Videos(): List<Video> {
         logger.info("🔄 Attempting to fetch F1 videos...")
-        val response = fetchVideosByChannel(f1ChannelId, "F1")
+        val response = fetchWithRetry(f1ChannelId, "F1")
         return parseAndSaveVideos(response, VideoCategory.F1)
     }
-    @Retryable(
-        retryFor = [Exception::class],
-        maxAttempts = 3,
-        backoff = Backoff(delay = 2000, multiplier = 2.0)
-    )
+    @CircuitBreaker(name = "youtubeService", fallbackMethod = "fallbackICCVideos")
+
     fun fetchAndStoreICCVideos(): List<Video> {
         logger.info("🔄 Attempting to fetch ICC videos...")
-        val response = fetchVideosByChannel(iccChannelId, "ICC")
+        val response = fetchWithRetry(iccChannelId, "ICC")
         return parseAndSaveVideos(response, VideoCategory.CRICKET)
     }
-    @Recover
-    fun recoverF1Videos(e: Exception): List<Video> {
-        logger.error("❌ All retries failed for F1! Error: ${e.message}")
+    private fun fetchWithRetry(channelId: String, label: String): String {
+        var attempt = 1
+        var delay = 2000L
+        while (attempt <= 3) {
+            try{
+                logger.info("🔄 $label attempt $attempt...")
+                val response = fetchVideosByChannel(channelId, label)
+                return response
+            }
+            catch (e: Exception){
+                logger.error("❌ $label attempt $attempt failed: ${e.message}")
+                if (attempt == 3) throw e
+                Thread.sleep(delay)
+                delay *= 2
+                attempt++
+            }
+        }
+        throw RuntimeException("All retries failed for $label")
+    }
+    fun fallbackF1Videos(e: Exception): List<Video> {
+        logger.error("⚡ Circuit OPEN for F1! Returning empty. Error: ${e.message}")
         return emptyList()
     }
-    @Recover
-    fun recoverICCVideos(e: Exception): List<Video> {
-        logger.error("❌ All retries failed for ICC! Error: ${e.message}")
+    fun fallbackICCVideos(e: Exception): List<Video> {
+        logger.error("⚡ Circuit OPEN for ICC! Returning empty. Error: ${e.message}")
         return emptyList()
     }
-
     fun fetchVideosByChannel(channelId: String, label: String): String {
         logger.info("Fetching $label videos from YouTube...")
         val response = webClient.get()
@@ -94,13 +105,13 @@ class YouTubeService(
                 }
                 val video = Video(
                     videoId = videoId,
-                    title = snippet.get("title")?.asText() ?: "",
-                    description = snippet.get("description")?.asText() ?: "",
+                    title = snippet.get("title")?.asString() ?: "",
+                    description = snippet.get("description")?.asString() ?: "",
                     thumbnailUrl = snippet.get("thumbnails")
                         ?.get("high")
-                        ?.get("url")?.asText() ?: "",
-                    publishedAt = snippet.get("publishedAt")?.asText() ?: "",
-                    channelTitle = snippet.get("channelTitle")?.asText() ?: "",
+                        ?.get("url")?.asString() ?: "",
+                    publishedAt = snippet.get("publishedAt")?.asString() ?: "",
+                    channelTitle = snippet.get("channelTitle")?.asString() ?: "",
                     category = category
                 )
                 savedVideos.add(videoRepository.save(video))
