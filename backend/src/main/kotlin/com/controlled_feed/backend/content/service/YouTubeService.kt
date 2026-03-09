@@ -17,7 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient
 @Service
 class YouTubeService(
     private val videoRepository: VideoRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val videoEventProducer: VideoEventProducer
 ) {
     private val logger = LoggerFactory.getLogger(YouTubeService::class.java)
     @Value("\${youtube.api.key}")
@@ -116,6 +117,7 @@ class YouTubeService(
                 )
                 savedVideos.add(videoRepository.save(video))
                 logger.info("Saved video: ${video.title}")
+                videoEventProducer.sendNewVideoEvent(video.videoId, category.name)
             }
         } catch (e: Exception) {
             logger.error("Error parsing YouTube response: ${e.message}")
