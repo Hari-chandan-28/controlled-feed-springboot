@@ -39,7 +39,12 @@ class RedisConfig {
             "f1-live-intervals" to defaultConfig.entryTtl(Duration.ofSeconds(3)),
 
             // Feed cache → 5 minutes
-            "feed" to defaultConfig.entryTtl(Duration.ofMinutes(5))
+            "feed" to defaultConfig.entryTtl(Duration.ofMinutes(5)),
+
+            // Temporary API Only for learning can be removed in the future
+            "cricket-live" to defaultConfig.entryTtl(Duration.ofSeconds(30)),
+            "cricket-scorecard" to defaultConfig.entryTtl(Duration.ofSeconds(30)),
+            "cricket-upcoming" to defaultConfig.entryTtl(Duration.ofHours(1))
         )
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(defaultConfig)
