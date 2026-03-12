@@ -7,7 +7,9 @@ import com.controlled_feed.backend.content.model.LiveInterval
 import com.controlled_feed.backend.content.model.LiveTiming
 import com.controlled_feed.backend.content.model.RaceResult
 import com.controlled_feed.backend.content.model.RaceSchedule
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 
@@ -20,7 +22,8 @@ class F1DashboardService {
     private val openF1Client = WebClient.builder()
         .baseUrl("https://api.openf1.org/v1")
         .build()
-
+    @Cacheable(value = ["f1-standings"], key = "'standings'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackDriverStandings")
     fun getDriverStandings(): List<DriverStanding> {
         logger.info("Fetching F1 driver standings")
         return try {
@@ -36,7 +39,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-constructors"], key = "'constructors'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackConstructorStandings")
     fun getConstructorStandings(): List<ConstructorStanding> {
         logger.info("Fetching F1 constructor standings...")
         return try {
@@ -52,7 +56,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-results"], key = "'results'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackRaceResults")
     fun getLatestRaceResults(): List<RaceResult> {
         logger.info("Fetching latest F1 race results")
         return try {
@@ -67,7 +72,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-schedule"], key = "'schedule'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackRaceSchedule")
     fun getRaceSchedule(): List<RaceSchedule> {
         logger.info("Fetching F1 race schedule")
         return try {
@@ -82,7 +88,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-live-positions"], key = "'positions'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLivePositions")
     fun getLiveDriverPositions(): List<LiveDriverPosition> {
         logger.info("Fetching Live driver positions")
         return try {
@@ -128,7 +135,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-live-timing"], key = "'timing'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLiveTiming")
     fun getLiveTiming(): List<LiveTiming> {
         logger.info("Fetching Live timing")
         return try {
@@ -160,7 +168,8 @@ class F1DashboardService {
             emptyList()
         }
     }
-
+    @Cacheable(value = ["f1-live-intervals"], key = "'intervals'")
+    @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLiveIntervals")
     fun getIntervals(): List<LiveInterval> {
         logger.info("Fetching intervals")
         return try {
@@ -186,7 +195,40 @@ class F1DashboardService {
             emptyList()
         }
     }
+    fun fallbackDriverStandings(e: Exception): List<DriverStanding> {
+        logger.error("Circuit OPEN for F1 standings! Error: ${e.message}")
+        return emptyList()
+    }
 
+    fun fallbackConstructorStandings(e: Exception): List<ConstructorStanding> {
+        logger.error("Circuit OPEN for constructor standings! Error: ${e.message}")
+        return emptyList()
+    }
+
+    fun fallbackRaceResults(e: Exception): List<RaceResult> {
+        logger.error("Circuit OPEN for race results! Error: ${e.message}")
+        return emptyList()
+    }
+
+    fun fallbackRaceSchedule(e: Exception): List<RaceSchedule> {
+        logger.error("Circuit OPEN for race schedule! Error: ${e.message}")
+        return emptyList()
+    }
+
+    fun fallbackLivePositions(e: Exception): List<LiveDriverPosition> {
+        logger.error("Circuit OPEN for live positions! Error: ${e.message}")
+        return emptyList()
+    }
+
+    fun fallbackLiveTiming(e: Exception): List<LiveTiming> {
+        logger.error("Circuit OPEN for live timing! Error: ${e.message}")
+        return emptyList()
+    }
+
+    fun fallbackLiveIntervals(e: Exception): List<LiveInterval> {
+        logger.error("Circuit OPEN for live intervals! Error: ${e.message}")
+        return emptyList()
+    }
     private fun calculateDriverPodiums(): Map<String, Int> {
         return try {
             val response = ergastClient.get()

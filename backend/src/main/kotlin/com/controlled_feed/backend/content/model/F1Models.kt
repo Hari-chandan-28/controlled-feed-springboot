@@ -1,5 +1,5 @@
 package com.controlled_feed.backend.content.model
-
+import java.io.Serializable
 data class DriverStanding(
     val position: String = "",
     val driverName: String = "",
@@ -8,7 +8,7 @@ data class DriverStanding(
     val wins:String="",
     val nationality:String="",
     val podiums: Int = 0
-)
+): Serializable
 data class RaceResult(
     val position: String = "",
     val driverName: String = "",
@@ -16,14 +16,14 @@ data class RaceResult(
     val time: String = "",
     val fastestLap: String = "",
     val points: String = ""
-)
+): Serializable
 data class RaceSchedule(
     val raceName: String = "",
     val circuit: String = "",
     val country: String = "",
     val date: String = "",
     val time: String = ""
-)
+): Serializable
 data class LiveDriverPosition(
     val driverNumber:Int = 0,
     val driverName: String = "",
@@ -33,7 +33,7 @@ data class LiveDriverPosition(
     val y: Double = 0.0,
     val z: Double = 0.0,
     val date: String = "",
-)
+): Serializable
 data class LiveTiming(
     val driverNumber:Int = 0,
     val lapNumber:Int = 0,
@@ -43,13 +43,13 @@ data class LiveTiming(
     val sector3: Double?= null,
     val isPitOutLap:Boolean = false,
     val date:String = ""
-)
+): Serializable
 data class LiveInterval(
     val driverNumber:Int = 0,
     val gapToLeader:String = "",
     val interval:String = "",
     val date:String = ""
-)
+): Serializable
 data class ConstructorStanding(
     val position: String = "",
     val teamName: String = "",
@@ -57,4 +57,4 @@ data class ConstructorStanding(
     val points: String = "",
     val wins: String = "",
     val podiums: Int = 0
-)
+): Serializable
