@@ -91,45 +91,19 @@ without unnecessary distractions.
     Swagger API docs
     Database indexing
 
-# How to Run This Project
-  ### Step 1 — Clone the Repository
-    bashgit clone https://github.com/Hari-chandan-28/controlled-feed-springboot.git
-    cd controlled-feed-springboot
-  ### Step 2 — Setup MySQL
-    sql CREATE DATABASE controlled_feed_db;
-  ### Step 3 — Setup Redis
-    bash# Windows
-    redis-server
-    * Or download from 
-[https://github.com/tporadowski/redis/releases]  
-  ### Step 4 — Setup Kafka
-    * bash# Terminal 1 - Start Zookeeper
-    cd C:\kafka
-    .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
-    * Terminal 2 - Start Kafka
-    cd C:\kafka
-    .\bin\windows\kafka-server-start.bat .\config\server.properties
-  ### Step 5 — Configure application.properties
-    properties
-## Database
-    spring.datasource.url=jdbc:mysql://localhost:3306/controlled_feed_db
-    spring.datasource.username=your_mysql_username
-    spring.datasource.password=your_mysql_password
+# How to Run
+    This project requires MySQL, Redis and Kafka
+    running before starting the application.
+### Prerequisites Check
+    - Java 21 installed
+    - MySQL running on port 3306
+    - Redis running on port 6379
+    - Kafka running on port 9092
+### Steps
+    Step 1 — Clone
+    Step 2 — Setup Database
+    Step 3 — Start Redis
+    Step 4 — Start Kafka
+    Step 5 — Configure properties
+    Step 6 — Run app
 
-## YouTube API
-    youtube.api.key=your_youtube_api_key
-
-## Cricket API
-    cricket.api.key=your_cricket_api_key
-
-## JWT
-    jwt.secret=your_jwt_secret_key
-  ### Step 6 — Run the App
-    bash# Using Maven
-    mvn spring-boot:run
-
-## Or in IntelliJ
-Run → BackendApplication.kt
-## Access
-    Swagger UI  → http://localhost:8080/swagger-ui
-    Health Check → http://localhost:8080/actuator/health
