@@ -35,7 +35,7 @@ without unnecessary distractions.
     YouTube Data API v3    → F1 + Cricket videos
     Ergast/Jolpi API       → F1 season data
     OpenF1 API             → F1 live race data
-    CricAPI                → Cricket live scores
+    CricAPI                → Cricket live scores (late responses and limited calls)
     Rome Library           → RSS feed parsing (8 sources)
    ## Documentation & Testing
     Springdoc OpenAPI  → Swagger UI
@@ -73,10 +73,10 @@ without unnecessary distractions.
     Live lap timing and sector times
     Live driver intervals and gaps
    ## Cricket
-    Live match scores
-    Full batting scorecard
-    Full bowling scorecard
-    Upcoming matches
+    Live match scores(late responses and limited calls)
+    Full batting scorecard 
+    Full bowling scorecard 
+    Upcoming matches (not team specific , some random matches info)
    ## Personalized Feed
     Feed based on user genre preferences
     Paginated responses
@@ -91,3 +91,45 @@ without unnecessary distractions.
     Swagger API docs
     Database indexing
 
+# How to Run This Project
+  ### Step 1 — Clone the Repository
+    bashgit clone https://github.com/Hari-chandan-28/controlled-feed-springboot.git
+    cd controlled-feed-springboot
+  ### Step 2 — Setup MySQL
+    sql CREATE DATABASE controlled_feed_db;
+  ### Step 3 — Setup Redis
+    bash# Windows
+    redis-server
+    * Or download from 
+[https://github.com/tporadowski/redis/releases]  
+  ### Step 4 — Setup Kafka
+    * bash# Terminal 1 - Start Zookeeper
+    cd C:\kafka
+    .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
+    * Terminal 2 - Start Kafka
+    cd C:\kafka
+    .\bin\windows\kafka-server-start.bat .\config\server.properties
+  ### Step 5 — Configure application.properties
+    properties
+## Database
+    spring.datasource.url=jdbc:mysql://localhost:3306/controlled_feed_db
+    spring.datasource.username=your_mysql_username
+    spring.datasource.password=your_mysql_password
+
+## YouTube API
+    youtube.api.key=your_youtube_api_key
+
+## Cricket API
+    cricket.api.key=your_cricket_api_key
+
+## JWT
+    jwt.secret=your_jwt_secret_key
+  ### Step 6 — Run the App
+    bash# Using Maven
+    mvn spring-boot:run
+
+## Or in IntelliJ
+Run → BackendApplication.kt
+## Access
+    Swagger UI  → http://localhost:8080/swagger-ui
+    Health Check → http://localhost:8080/actuator/health
