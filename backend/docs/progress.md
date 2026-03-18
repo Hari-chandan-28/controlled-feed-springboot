@@ -18,6 +18,7 @@
 * ✅ F1 Dashboard (standings, results, schedule)
 * ✅ F1 Live Timing (OpenF1)
 * ✅ Cricket Live Scorecard (CricAPI)
+* ✅ AI F1&Cricket ChatBot (GeminiAPI)
 
 # WHAT I LEFT
 * ⬜ Microservices

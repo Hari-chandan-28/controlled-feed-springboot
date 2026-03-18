@@ -36,6 +36,8 @@
 | 19 | GET | `/api/cricket/upcoming` | ✅ | Upcoming cricket matches | 30/min | 1 hour |
 | 20 | GET | `/api/cricket/scorecard/{matchId}` | ✅ | Full match scorecard | 30/min | 30 secs |
 | 21 | GET | `/actuator/health` | ❌ | App health status | 30/min | ❌ |
+| 22 | POST | `/api/chat/ask` | ✅ | Ask F1 and Cricket questions to AI chatbot | 30/min | ❌ |
+
 ## 🔐 Auth APIs
 
 ### 1. Signup
@@ -623,3 +625,36 @@ json{
 Errors:
 ```
 503 → one or more components DOWN
+```
+### 22. AI Sports Chatbot
+```
+POST /api/chat/ask
+Auth Required: Yes
+```
+Request:
+```json
+{
+    "question": "Who won the 2004 F1 championship?"
+}
+```
+Response `200`:
+```json
+{
+    "answer": "Michael Schumacher won the 2004 F1 World Championship driving for Ferrari...",
+    "question": "Who won the 2004 F1 championship?"
+}
+```
+Errors:
+```
+401 → missing or invalid token
+429 → rate limit exceeded (30 requests/min)
+429 → Gemini API quota exceeded
+500 → Gemini API error
+503 → Circuit Breaker open
+```
+Note:
+```
+Only answers F1 and Cricket related questions
+Powered by Google Gemini AI
+Out of scope questions → returns polite refusal message
+```

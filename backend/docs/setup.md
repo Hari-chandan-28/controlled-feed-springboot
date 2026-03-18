@@ -7,6 +7,7 @@
 ## Required Accounts / API Keys
     Google Cloud Console  → YouTube Data API v3 key
     CricAPI               → Cricket live scores key (free)
+    GeminiAPI             → Gemini 2.5 Flash API keu(free)     
 ## Required Tools
     IntelliJ IDEA    → IDE (recommended)
     Postman          → API testing
@@ -51,8 +52,12 @@
 ### Cricket API
     cricket.api.key=your_cricket_api_key
 
+### Gemini API
+    gemini.api.key=your_gemini_api_key
+
 ### JWT
     jwt.secret=your_jwt_secret_key
+
 ## Step 6 — Run the App
     bash# Using Maven
     mvn spring-boot:run
@@ -62,9 +67,10 @@
 ### Access
     Swagger UI  → http://localhost:8080/swagger-ui
     Health Check → http://localhost:8080/actuator/health
+
 # ENVIRONMENT VARIABLES
 ### App
-spring.application.name=controlled-feed-springboot
+    spring.application.name=controlled-feed-springboot
 
 ### Database
     spring.datasource.url=jdbc:mysql://localhost:3306/controlled_feed_db
@@ -145,3 +151,6 @@ spring.application.name=controlled-feed-springboot
     resilience4j.circuitbreaker.instances.cricketService.wait-duration-in-open-state=30s
     resilience4j.circuitbreaker.instances.cricketService.permitted-number-of-calls-in-half-open-state=2
     resilience4j.circuitbreaker.instances.cricketService.automatic-transition-from-open-to-half-open-enabled=true
+### Gemini
+    gemini.api.key=GEMINI_API_KEY
+    gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey"

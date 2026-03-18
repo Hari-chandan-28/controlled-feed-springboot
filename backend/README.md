@@ -15,6 +15,7 @@ without unnecessary distractions.
 * Platforms like Instagram mix useful content with a lot of irrelevant information, which affects focus and productivity.
 * To solve this, I created a dedicated solution that provides only F1 and Cricket updates.
 * This also helped me learn and apply new technologies by working with external APIs and building a personalized feed.
+* want to work with LLMs , so I will add the LLM api and try to use them and connect it correctly
 
 # TECH STACK 
    ## Core
@@ -32,11 +33,12 @@ without unnecessary distractions.
    ## Messaging
     Apache Kafka       → event streaming / message queue
    ## External APIs
-    YouTube Data API v3    → F1 + Cricket videos
-    Ergast/Jolpi API       → F1 season data
-    OpenF1 API             → F1 live race data
-    CricAPI                → Cricket live scores (late responses and limited calls)
-    Rome Library           → RSS feed parsing (8 sources)
+    YouTube Data API v3             → F1 + Cricket videos
+    Ergast/Jolpi API                → F1 season data
+    OpenF1 API                      → F1 live race data
+    CricAPI                         → Cricket live scores (late responses and limited calls)
+    Rome Library                    → RSS feed parsing (8 sources)
+    Gemini (2.5 flash model) API    → F1 and Cricket related AI chatbot 
    ## Documentation & Testing
     Springdoc OpenAPI  → Swagger UI
     Postman            → API testing
@@ -81,6 +83,10 @@ without unnecessary distractions.
     Feed based on user genre preferences
     Paginated responses
     Redis cached
+   ## ChatBot
+    Only answer the questions which are related to the f1 and cricket
+    Deny answering other stuff
+
    ## Production Grade
     Redis caching with TTL
     Rate limiting per IP
