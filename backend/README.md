@@ -114,9 +114,13 @@ without unnecessary distractions.
     Step 6 — Run app
 
 ##  Content Documentation 
-    I have used the Claude and ChatGPT for making the api,architecture, database,progress,setup documentation which are present in the docs package .
-    I have also too help of GPTs for making more clear systemDesign Documentation for each system design concept , these are present in the systemDesignTopicsDocs package, In that i made some dedicated files for better understanding of the features and their benifits.
-    I have used AI because i need to save time and need quality output.
+    * I have used the Claude and ChatGPT for making the api,architecture, database,progress,setup documentation which 
+      are present in the docs package.
+    * Also I have taken help of GPTs for making more clear systemDesign  Documentation for each  system  design  concept, 
+      these are present in the systemDesignTopicsDocs package,In that i made some dedicated files for better understanding
+      of the features and their benifits.
+    * I used all these AI/GPTs just to save time and to get quality output of Documentation.
 
 ## Time Taken
-    I took 32 Days to complete this project and with some leftoff features mentioned clearly in the progress.md file which is present in the docs package.
+    I took 32 Days to complete this project and with some leftoff features mentioned clearly in the progress.md file \
+    which is present in the docs package.
