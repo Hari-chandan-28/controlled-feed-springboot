@@ -2,7 +2,7 @@
 FAN FEED
 
 # ABOUT THIS PROJECT
-* This is my first backend project, built to understand core concepts like API development, system design basics, and 
+* This is my first backend project, built to understand core concepts like API development, system design and 
 real-world data handling and to solve my problem .
 # PROBLEM STATEMENT
 * Existing platforms like social media apps provide sports updates, but they also contain a large  amount  of  distracting 
@@ -12,10 +12,10 @@ without unnecessary distractions.
 
 # WHY I BUILT THIS
 * I built this project to avoid distractions caused by social media while following sports updates. 
-* Platforms like Instagram mix useful content with a lot of irrelevant information, which affects focus and productivity.
+* Platforms like Instagram mix useful content with a lot of irrelevant information, which affects focus and productivity. So, I need to fix my problem.
 * To solve this, I created a dedicated solution that provides only F1 and Cricket updates.
-* This also helped me learn and apply new technologies by working with external APIs and building a personalized feed.
-* want to work with LLMs , so I will add the LLM api and try to use them and connect it correctly
+* This also helped me learn and apply new technologies,system design concepts by working with external APIs and building a personalized feed.
+* I want to work with LLMs , so I have added the Gemini API and try to use them and connected to the backend .
 
 # TECH STACK 
    ## Core
@@ -113,3 +113,10 @@ without unnecessary distractions.
     Step 5 — Configure properties
     Step 6 — Run app
 
+##  Content Documentation 
+    I have used the Claude and ChatGPT for making the api,architecture, database,progress,setup documentation which are present in the docs package .
+    I have also too help of GPTs for making more clear systemDesign Documentation for each system design concept , these are present in the systemDesignTopicsDocs package, In that i made some dedicated files for better understanding of the features and their benifits.
+    I have used AI because i need to save time and need quality output.
+
+## Time Taken
+    I took 32 Days to complete this project and with some leftoff features mentioned clearly in the progress.md file which is present in the docs package.
