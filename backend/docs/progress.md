@@ -28,4 +28,5 @@
 * ⬜ Cricket Live Score (IPL, India, SENA)
 * ⬜ Documentation (README, System Design, Architecture)
 * ⬜ Circuit Map Visualization (Frontend)
+* ⬜ Add the memory to the ChatBot for the ChatContext (look for the best methods used by openAI , Claude)
 
