@@ -117,7 +117,9 @@ class YouTubeService(
                 )
                 savedVideos.add(videoRepository.save(video))
                 logger.info("Saved video: ${video.title}")
+                logger.info("attempting to save $video")
                 videoEventProducer.sendNewVideoEvent(video.videoId, category.name)
+                logger.info ("Video saved to ${video.title}")
             }
         } catch (e: Exception) {
             logger.error("Error parsing YouTube response: ${e.message}")

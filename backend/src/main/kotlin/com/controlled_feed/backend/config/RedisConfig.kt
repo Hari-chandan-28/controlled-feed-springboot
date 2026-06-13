@@ -32,7 +32,7 @@ class RedisConfig {
             "f1-constructors" to defaultConfig.entryTtl(Duration.ofHours(1)),
             "f1-results" to defaultConfig.entryTtl(Duration.ofHours(1)),
             "f1-schedule" to defaultConfig.entryTtl(Duration.ofHours(1)),
-
+            "article-feed" to defaultConfig.entryTtl(Duration.ofMinutes(5)),
             // F1 Live data → cache for 3 seconds (updates frequently)
             "f1-live-positions" to defaultConfig.entryTtl(Duration.ofSeconds(3)),
             "f1-live-timing" to defaultConfig.entryTtl(Duration.ofSeconds(3)),

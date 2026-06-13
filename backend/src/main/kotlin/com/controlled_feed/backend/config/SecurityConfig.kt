@@ -12,6 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
@@ -28,6 +31,7 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
+            .cors { it.configurationSource(corsConfigurationSource()) }
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
             .sessionManagement {
@@ -42,11 +46,23 @@ class SecurityConfig(
                     .requestMatchers("/api-docs/**").permitAll()
                     .requestMatchers("/swagger-ui.html").permitAll()
                     .requestMatchers("/actuator/health/**").permitAll()
+                    .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/api/profile/upload-picture").authenticated()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
+    }
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val config = CorsConfiguration()
+        config.allowedOrigins = listOf("http://localhost:5173")
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("*")
+        config.allowCredentials = true
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return source
     }
 }

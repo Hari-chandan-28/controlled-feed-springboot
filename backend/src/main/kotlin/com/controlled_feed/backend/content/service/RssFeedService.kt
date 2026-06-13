@@ -1,16 +1,23 @@
 package com.controlled_feed.backend.content.service
 
+import com.controlled_feed.backend.auth.repository.UserRepository
+import com.controlled_feed.backend.common.ResourceNotFoundException
 import com.controlled_feed.backend.content.model.Article
 import com.controlled_feed.backend.content.repository.ArticleRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import com.controlled_feed.backend.content.model.VideoCategory
+import com.controlled_feed.backend.profile.repository.ProfileRepository
 import com.rometools.rome.io.SyndFeedInput
 import com.rometools.rome.io.XmlReader
+import org.springframework.cache.annotation.Cacheable
 import java.net.URL
 
 @Service
-class RssFeedService (private val articleRepository: ArticleRepository){
+class RssFeedService (private val articleRepository: ArticleRepository,
+                      private val userRepository: UserRepository,
+                      private val profileRepository: ProfileRepository
+){
     private val logger = LoggerFactory.getLogger(javaClass)
     private val f1FeedUrls = listOf(
         "https://www.autosport.com/rss/f1/news/" to "Autosport",
@@ -67,5 +74,25 @@ class RssFeedService (private val articleRepository: ArticleRepository){
             logger.error("Error fetching articles from $source:${e.message}")
         }
         return savedArticles
+    }
+    fun getF1Articles(): List<Article> {
+        return articleRepository.findByCategoryIn(listOf(VideoCategory.F1))
+    }
+
+    fun getCricketArticles(): List<Article> {
+        return articleRepository.findByCategoryIn(listOf(VideoCategory.CRICKET))
+    }
+    @Cacheable(value = ["article-feed"], key = "#email")    fun getArticlesByUserGenres(email: String): List<Article> {
+        val user = userRepository.findByEmail(email)
+            .orElseThrow { ResourceNotFoundException("User not found!") }
+        val profile = profileRepository.findByUserId(user.id)
+            .orElseThrow { ResourceNotFoundException("profile not found!") }
+
+        val categories = profile.genres.map { genre ->
+            VideoCategory.valueOf(genre.name)
+        }
+
+        logger.info("📰 Fetching articles for genres: $categories")
+        return articleRepository.findByCategoryIn(categories)
     }
 }

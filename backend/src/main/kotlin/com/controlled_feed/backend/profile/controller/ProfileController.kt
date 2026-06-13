@@ -32,6 +32,13 @@ class ProfileController (private val profileService: ProfileService) {
         val profile = profileService.getProfile(email)
         return ResponseEntity.ok(profile)
     }
+    @PutMapping("/update")
+    fun updateProfile(@RequestBody request: ProfileUpdateRequest): ResponseEntity<Profile> {
+        val email = SecurityContextHolder.getContext().authentication?.name
+            ?: throw RuntimeException("Not authenticated")
+        val profile = profileService.updateProfile(email, request)
+        return ResponseEntity.ok(profile)
+    }
     @PostMapping("/upload-picture")
     fun uploadProfilePicture(
         @RequestParam("file") file: MultipartFile
@@ -55,4 +62,8 @@ class ProfileController (private val profileService: ProfileService) {
 data class CreateProfileRequest(
     val bio: String?,
     val genres: List<Genre>
+)
+data class ProfileUpdateRequest(
+    val bio: String = "",
+    val genres: List<Genre> = emptyList()
 )
