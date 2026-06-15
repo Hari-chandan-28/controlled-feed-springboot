@@ -82,7 +82,8 @@ class RssFeedService (private val articleRepository: ArticleRepository,
     fun getCricketArticles(): List<Article> {
         return articleRepository.findByCategoryIn(listOf(VideoCategory.CRICKET))
     }
-    @Cacheable(value = ["article-feed"], key = "#email")    fun getArticlesByUserGenres(email: String): List<Article> {
+    @Cacheable(value = ["article-feed"], key = "#email")
+    fun getArticlesByUserGenres(email: String): List<Article> {
         val user = userRepository.findByEmail(email)
             .orElseThrow { ResourceNotFoundException("User not found!") }
         val profile = profileRepository.findByUserId(user.id)

@@ -35,6 +35,7 @@ class ProfileService(private val profileRepository: ProfileRepository,
         return profileRepository.findByUserId(user.id)
                 .orElseThrow{ResourceNotFoundException("Profile not found!")}
     }
+    @CacheEvict(value = ["article-feed"], key = "#email")
     fun updateProfile(email: String, request : ProfileUpdateRequest): Profile {
         val user = userRepository.findByEmail(email)
             .orElseThrow { ResourceNotFoundException("User not found!") }
@@ -47,7 +48,6 @@ class ProfileService(private val profileRepository: ProfileRepository,
         feedService.clearFeedCache()
         return profileRepository.save(updated)
     }
-    @CacheEvict(value = ["article-feed"], key = "#email")
     fun updateProfilePicture(email: String, picturePath:String): Profile {
         val user = userRepository.findByEmail(email)
         .orElseThrow { ResourceNotFoundException("User not found!") }
