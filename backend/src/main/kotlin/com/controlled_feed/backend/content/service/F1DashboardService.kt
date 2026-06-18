@@ -1,12 +1,6 @@
 package com.controlled_feed.backend.content.service
 
-import com.controlled_feed.backend.content.model.ConstructorStanding
-import com.controlled_feed.backend.content.model.DriverStanding
-import com.controlled_feed.backend.content.model.LiveDriverPosition
-import com.controlled_feed.backend.content.model.LiveInterval
-import com.controlled_feed.backend.content.model.LiveTiming
-import com.controlled_feed.backend.content.model.RaceResult
-import com.controlled_feed.backend.content.model.RaceSchedule
+import com.controlled_feed.backend.content.model.*
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
@@ -16,12 +10,23 @@ import org.springframework.web.reactive.function.client.WebClient
 @Service
 class F1DashboardService {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    // Built locally, not Spring beans — matches your original working
+    // setup exactly. No @Qualifier/WebClientConfig needed since these
+    // aren't injected, which is what avoids the bean-collision bug entirely.
     private val ergastClient = WebClient.builder()
         .baseUrl("https://api.jolpi.ca/ergast/f1")
         .build()
     private val openF1Client = WebClient.builder()
         .baseUrl("https://api.openf1.org/v1")
         .build()
+    private val multiViewerClient = WebClient.builder()
+        .baseUrl("https://api.multiviewer.app/api/v1")
+        .build()
+
+    // ───────────────────────── Static / season data ─────────────────────────
+    // Unchanged from your working version — exact same logic, fields, names.
+
     @Cacheable(value = ["f1-standings"], key = "'standings'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackDriverStandings")
     fun getDriverStandings(): List<DriverStanding> {
@@ -39,6 +44,7 @@ class F1DashboardService {
             emptyList()
         }
     }
+
     @Cacheable(value = ["f1-constructors"], key = "'constructors'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackConstructorStandings")
     fun getConstructorStandings(): List<ConstructorStanding> {
@@ -56,6 +62,7 @@ class F1DashboardService {
             emptyList()
         }
     }
+
     @Cacheable(value = ["f1-results"], key = "'results'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackRaceResults")
     fun getLatestRaceResults(): List<RaceResult> {
@@ -72,6 +79,7 @@ class F1DashboardService {
             emptyList()
         }
     }
+
     @Cacheable(value = ["f1-schedule"], key = "'schedule'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackRaceSchedule")
     fun getRaceSchedule(): List<RaceSchedule> {
@@ -88,6 +96,10 @@ class F1DashboardService {
             emptyList()
         }
     }
+
+    // ───────────────────────── Live data ─────────────────────────
+    // Unchanged from your working version.
+
     @Cacheable(value = ["f1-live-positions"], key = "'positions'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLivePositions")
     fun getLiveDriverPositions(): List<LiveDriverPosition> {
@@ -135,6 +147,7 @@ class F1DashboardService {
             emptyList()
         }
     }
+
     @Cacheable(value = ["f1-live-timing"], key = "'timing'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLiveTiming")
     fun getLiveTiming(): List<LiveTiming> {
@@ -168,6 +181,7 @@ class F1DashboardService {
             emptyList()
         }
     }
+
     @Cacheable(value = ["f1-live-intervals"], key = "'intervals'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLiveIntervals")
     fun getIntervals(): List<LiveInterval> {
@@ -195,6 +209,129 @@ class F1DashboardService {
             emptyList()
         }
     }
+
+    // ───────────────────────── NEW: dynamic circuits + drivers ─────────────────────────
+    // Added for the F1 Live page — no hardcoded circuit/driver lists.
+
+    fun getAllMeetingsForYear(year: Int): List<Map<String, Any?>> {
+        logger.info("📅 Fetching all meetings for $year")
+        return try {
+            val response = openF1Client.get()
+                .uri("/meetings?year=$year")
+                .retrieve()
+                .bodyToFlux(Map::class.java)
+                .collectList()
+                .block() ?: emptyList()
+
+            response.map {
+                mapOf(
+                    "circuitKey" to it["circuit_key"],
+                    "circuitShortName" to it["circuit_short_name"],
+                    "meetingName" to it["meeting_name"],
+                    "countryName" to it["country_name"],
+                    "dateStart" to it["date_start"]
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("Error fetching meetings for $year: ${e.message}")
+            emptyList()
+        }
+    }
+
+    @Cacheable(value = ["circuit-layout"], key = "#circuitKey + '-' + #year")
+    fun getCircuitLayout(circuitKey: Int, year: Int): CircuitLayout {
+        logger.info("🗺️ Fetching circuit layout for circuit $circuitKey, year $year")
+        val response = multiViewerClient.get()
+            .uri("/circuits/$circuitKey/$year")
+            .retrieve()
+            .bodyToMono(Map::class.java)
+            .block() ?: throw RuntimeException("Circuit data not found")
+
+        val rotation = (response["rotation"] as? Number)?.toDouble() ?: 0.0
+
+        val trackX = response["x"] as? List<*>
+        val trackY = response["y"] as? List<*>
+        val trackPoints = trackX?.mapIndexed { i, x ->
+            CircuitPoint(
+                x = (x as Number).toDouble(),
+                y = (trackY?.get(i) as Number).toDouble()
+            )
+        } ?: emptyList()
+
+        val cornersData = response["corners"] as? List<*>
+        val corners = cornersData?.map { corner ->
+            val c = corner as Map<*, *>
+            val tp = c["trackPosition"] as Map<*, *>
+            CircuitPoint(
+                x = (tp["x"] as Number).toDouble(),
+                y = (tp["y"] as Number).toDouble(),
+                number = (c["number"] as? Number)?.toInt()
+            )
+        } ?: emptyList()
+
+        return CircuitLayout(
+            circuitKey = circuitKey,
+            circuitName = response["circuitName"]?.toString() ?: "",
+            rotation = rotation,
+            corners = corners,
+            trackPoints = trackPoints
+        )
+    }
+
+    fun getCurrentDrivers(): List<Map<String, Any?>> {
+        return try {
+            val response = openF1Client.get()
+                .uri("/drivers?session_key=latest")
+                .retrieve()
+                .bodyToFlux(Map::class.java)
+                .collectList()
+                .block() ?: emptyList()
+
+            response.map {
+                mapOf(
+                    "driverNumber" to it["driver_number"],
+                    "fullName" to it["full_name"],
+                    "nameAcronym" to it["name_acronym"],
+                    "teamName" to it["team_name"],
+                    "teamColour" to it["team_colour"],
+                    "headshotUrl" to it["headshot_url"]
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("Error fetching current drivers: ${e.message}")
+            emptyList()
+        }
+    }
+
+    fun getCurrentSessionContext(): Map<String, Any?> {
+        return try {
+            val response = openF1Client.get()
+                .uri("/sessions?session_key=latest")
+                .retrieve()
+                .bodyToFlux(Map::class.java)
+                .collectList()
+                .block()
+
+            val session = response?.firstOrNull() ?: return mapOf(
+                "circuitKey" to null, "year" to null, "meetingKey" to null
+            )
+
+            mapOf(
+                "circuitKey" to session["circuit_key"],
+                "year" to session["year"],
+                "meetingKey" to session["meeting_key"],
+                "circuitShortName" to session["circuit_short_name"],
+                "sessionName" to session["session_name"]
+            )
+        } catch (e: Exception) {
+            logger.error("Error fetching session context: ${e.message}")
+            mapOf("circuitKey" to null, "year" to null, "meetingKey" to null)
+        }
+    }
+
+    // ───────────────────────── Circuit breaker fallbacks ─────────────────────────
+    // Unchanged from your working version.
+
     fun fallbackDriverStandings(e: Exception): List<DriverStanding> {
         logger.error("Circuit OPEN for F1 standings! Error: ${e.message}")
         return emptyList()
@@ -229,6 +366,10 @@ class F1DashboardService {
         logger.error("Circuit OPEN for live intervals! Error: ${e.message}")
         return emptyList()
     }
+
+    // ───────────────────────── Private helpers ─────────────────────────
+    // Unchanged from your working version.
+
     private fun calculateDriverPodiums(): Map<String, Int> {
         return try {
             val response = ergastClient.get()
@@ -315,7 +456,6 @@ class F1DashboardService {
                 podiums = podiums[name] ?: 0
             )
         }
-
     }
 
     @Suppress("UNCHECKED_CAST")
