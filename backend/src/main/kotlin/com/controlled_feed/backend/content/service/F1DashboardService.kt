@@ -11,9 +11,6 @@ import org.springframework.web.reactive.function.client.WebClient
 class F1DashboardService {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    // Built locally, not Spring beans — matches your original working
-    // setup exactly. No @Qualifier/WebClientConfig needed since these
-    // aren't injected, which is what avoids the bean-collision bug entirely.
     private val ergastClient = WebClient.builder()
         .baseUrl("https://api.jolpi.ca/ergast/f1")
         .build()
@@ -24,8 +21,7 @@ class F1DashboardService {
         .baseUrl("https://api.multiviewer.app/api/v1")
         .build()
 
-    // ───────────────────────── Static / season data ─────────────────────────
-    // Unchanged from your working version — exact same logic, fields, names.
+    // ───────────── Static / season data (unchanged, working) ─────────────
 
     @Cacheable(value = ["f1-standings"], key = "'standings'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackDriverStandings")
@@ -97,8 +93,7 @@ class F1DashboardService {
         }
     }
 
-    // ───────────────────────── Live data ─────────────────────────
-    // Unchanged from your working version.
+    // ───────────── Live data (unchanged logic, caching now correct) ─────────────
 
     @Cacheable(value = ["f1-live-positions"], key = "'positions'")
     @CircuitBreaker(name = "f1Service", fallbackMethod = "fallbackLivePositions")
@@ -210,9 +205,9 @@ class F1DashboardService {
         }
     }
 
-    // ───────────────────────── NEW: dynamic circuits + drivers ─────────────────────────
-    // Added for the F1 Live page — no hardcoded circuit/driver lists.
+    // ───────────── Session/circuit/driver lookups — caching now matches real cadence ─────────────
 
+    @Cacheable(value = ["f1-meetings"], key = "#year")
     fun getAllMeetingsForYear(year: Int): List<Map<String, Any?>> {
         logger.info("📅 Fetching all meetings for $year")
         return try {
@@ -278,7 +273,9 @@ class F1DashboardService {
         )
     }
 
+    @Cacheable(value = ["f1-current-drivers"], key = "'current-drivers'")
     fun getCurrentDrivers(): List<Map<String, Any?>> {
+        logger.info("Fetching current driver grid")
         return try {
             val response = openF1Client.get()
                 .uri("/drivers?session_key=latest")
@@ -303,7 +300,12 @@ class F1DashboardService {
         }
     }
 
+    // Sessions update once a day per OpenF1 docs — this cache (3 hours)
+    // means we hit OpenF1's /sessions endpoint a handful of times a day
+    // total, instead of every 4 seconds. This was the actual 429 cause.
+    @Cacheable(value = ["f1-session-context"], key = "'session-context'")
     fun getCurrentSessionContext(): Map<String, Any?> {
+        logger.info("🔍 Fetching session context")
         return try {
             val response = openF1Client.get()
                 .uri("/sessions?session_key=latest")
@@ -329,8 +331,7 @@ class F1DashboardService {
         }
     }
 
-    // ───────────────────────── Circuit breaker fallbacks ─────────────────────────
-    // Unchanged from your working version.
+    // ───────────── Circuit breaker fallbacks (unchanged) ─────────────
 
     fun fallbackDriverStandings(e: Exception): List<DriverStanding> {
         logger.error("Circuit OPEN for F1 standings! Error: ${e.message}")
@@ -367,8 +368,7 @@ class F1DashboardService {
         return emptyList()
     }
 
-    // ───────────────────────── Private helpers ─────────────────────────
-    // Unchanged from your working version.
+    // ───────────── Private helpers (unchanged, working) ─────────────
 
     private fun calculateDriverPodiums(): Map<String, Int> {
         return try {
@@ -429,7 +429,7 @@ class F1DashboardService {
             }
             podiumCount
         } catch (e: Exception) {
-            logger.error(" Error calculating constructor podiums: ${e.message}")
+            logger.error("Error calculating constructor podiums: ${e.message}")
             emptyMap()
         }
     }

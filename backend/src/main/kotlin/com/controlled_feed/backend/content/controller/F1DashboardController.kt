@@ -2,6 +2,7 @@ package com.controlled_feed.backend.content.controller
 
 import com.controlled_feed.backend.content.model.*
 import com.controlled_feed.backend.content.service.F1DashboardService
+import com.controlled_feed.backend.content.service.F1LivePoller
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -15,15 +16,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 @RestController
 @RequestMapping("/api/f1")
 class F1DashboardController(
-    private val dashboardService: F1DashboardService
+    private val dashboardService: F1DashboardService,
+    private val livePoller: F1LivePoller
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-
-    // Shared pool for all SSE streams — sized for a handful of concurrent
-    // viewers; each stream uses one scheduled task, not one blocked thread
     private val sseExecutor: ScheduledExecutorService = Executors.newScheduledThreadPool(4)
-
-    // ── Static / season data (Ergast/Jolpi — already working, unchanged) ──
 
     @GetMapping("/standings")
     fun getDriverStandings(): ResponseEntity<List<DriverStanding>> =
@@ -33,18 +30,13 @@ class F1DashboardController(
     fun getConstructorStandings(): ResponseEntity<List<ConstructorStanding>> =
         ResponseEntity.ok(dashboardService.getConstructorStandings())
 
-//    @GetMapping("/results/{round}")
-//    fun getRaceResults(@PathVariable round: Int): ResponseEntity<List<RaceResult>> =
-//        ResponseEntity.ok(dashboardService.getRaceResults(round))
     @GetMapping("/results")
-    fun getLatestRaceResults(): ResponseEntity<List<RaceResult>> {
-        return ResponseEntity.ok(dashboardService.getLatestRaceResults())
-    }
-    @GetMapping("/schedule")
-    fun getSchedule(): ResponseEntity<List<RaceSchedule>> =
-        ResponseEntity.ok(dashboardService.getRaceSchedule())
+    fun getLatestRaceResults(): ResponseEntity<List<RaceResult>> =
+        ResponseEntity.ok(dashboardService.getLatestRaceResults())
 
-    // ── Dynamic circuit + driver lookups (no hardcoding) ──
+    @GetMapping("/schedule")
+    fun getRaceSchedule(): ResponseEntity<List<RaceSchedule>> =
+        ResponseEntity.ok(dashboardService.getRaceSchedule())
 
     @GetMapping("/circuits/{year}")
     fun getAllCircuits(@PathVariable year: Int): ResponseEntity<List<Map<String, Any?>>> =
@@ -61,14 +53,9 @@ class F1DashboardController(
     fun getCurrentDrivers(): ResponseEntity<List<Map<String, Any?>>> =
         ResponseEntity.ok(dashboardService.getCurrentDrivers())
 
-    // Tells frontend which circuit/year is live right now — drives the
-    // "only refetch circuit layout when this changes" logic on the client
     @GetMapping("/live/session-context")
     fun getSessionContext(): ResponseEntity<Map<String, Any?>> =
         ResponseEntity.ok(dashboardService.getCurrentSessionContext())
-
-    // ── Live data — one-off REST fetch (used outside the live page,
-    //     e.g. if some other widget just needs a snapshot) ──
 
     @GetMapping("/live/positions")
     fun getLiveDriverPositions(): ResponseEntity<List<LiveDriverPosition>> =
@@ -82,42 +69,38 @@ class F1DashboardController(
     fun getLiveIntervals(): ResponseEntity<List<LiveInterval>> =
         ResponseEntity.ok(dashboardService.getIntervals())
 
-    // ── Live data — SSE stream, this is what F1Live.jsx actually uses ──
+    private val activeStreams = java.util.concurrent.atomic.AtomicInteger(0)
+
+    // ... your other @GetMapping endpoints stay exactly as they are ...
 
     @GetMapping("/live/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun stream(): SseEmitter {
-        val emitter = SseEmitter(0L) // no forced timeout; client/server control lifecycle
+        val emitter = SseEmitter(0L)
         val running = AtomicBoolean(true)
+        val alreadyCleanedUp = AtomicBoolean(false)
 
-        emitter.onCompletion { running.set(false) }
-        emitter.onTimeout { running.set(false) }
-        emitter.onError { running.set(false) }
+        val cleanup = {
+            if (alreadyCleanedUp.compareAndSet(false, true)) {
+                running.set(false)
+            }
+        }
+
+        emitter.onCompletion(cleanup)
+        emitter.onTimeout(cleanup)
+        emitter.onError { cleanup() }
 
         val future = sseExecutor.scheduleWithFixedDelay({
             if (!running.get()) return@scheduleWithFixedDelay
             try {
-                val positions = dashboardService.getLiveDriverPositions()
-                val timing = dashboardService.getLiveTiming()
-                val intervals = dashboardService.getIntervals()
-                val sessionContext = dashboardService.getCurrentSessionContext()
-
-                val data = mapOf(
-                    "positions" to positions,
-                    "timing" to timing,
-                    "intervals" to intervals,
-                    "isLive" to positions.isNotEmpty(),
-                    "circuitKey" to sessionContext["circuitKey"],
-                    "year" to sessionContext["year"],
-                    "meetingKey" to sessionContext["meetingKey"],
-                    "timestamp" to System.currentTimeMillis()
-                )
-                emitter.send(SseEmitter.event().data(data))
+                emitter.send(SseEmitter.event().data(livePoller.getLatestSnapshot()))
             } catch (e: Exception) {
-                logger.warn("SSE send failed, closing stream: ${e.message}")
-                running.set(false)
-                emitter.completeWithError(e)
+                // ANY send failure means this connection is dead — doesn't
+                // matter if it's IOException, IllegalStateException, or
+                // anything else. Stop trying immediately, every time.
+                logger.warn("SSE send failed, stopping this stream: ${e.message}")
+                cleanup()
             }
-        }, 0, 4, TimeUnit.SECONDS)
+        }, 0, 2, TimeUnit.SECONDS)
 
         emitter.onCompletion { future.cancel(true) }
         emitter.onTimeout { future.cancel(true) }
