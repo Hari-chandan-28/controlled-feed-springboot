@@ -57,5 +57,10 @@ class ProfileService(private val profileRepository: ProfileRepository,
         val updatedProfile = profile.copy(profilePicturePath = picturePath)
         return profileRepository.save(updatedProfile)
     }
-
+    fun updateName(email: String, newName: String) {
+        val user = userRepository.findByEmail(email)
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val updated = user.copy(name = newName)
+        userRepository.save(updated)
+    }
 }

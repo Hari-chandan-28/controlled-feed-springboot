@@ -14,17 +14,19 @@ import java.io.File
 @RequestMapping("/api/profile")
 class ProfileController (private val profileService: ProfileService) {
     @PostMapping("/create")
-    fun create(@RequestBody request : CreateProfileRequest
+    fun create(
+        @RequestBody request: CreateProfileRequest
     ): ResponseEntity<Profile> {
         val email = SecurityContextHolder.getContext().authentication?.name
             ?: throw RuntimeException("Not authenticated")
         val profile = profileService.createProfile(
             email = email,
-            bio= request.bio,
+            bio = request.bio,
             genres = request.genres
         )
         return ResponseEntity.ok(profile)
     }
+
     @GetMapping("/me")
     fun getProfile(): ResponseEntity<Profile> {
         val email = SecurityContextHolder.getContext().authentication?.name
@@ -32,6 +34,7 @@ class ProfileController (private val profileService: ProfileService) {
         val profile = profileService.getProfile(email)
         return ResponseEntity.ok(profile)
     }
+
     @PutMapping("/update")
     fun updateProfile(@RequestBody request: ProfileUpdateRequest): ResponseEntity<Profile> {
         val email = SecurityContextHolder.getContext().authentication?.name
@@ -39,6 +42,7 @@ class ProfileController (private val profileService: ProfileService) {
         val profile = profileService.updateProfile(email, request)
         return ResponseEntity.ok(profile)
     }
+
     @PostMapping("/upload-picture")
     fun uploadProfilePicture(
         @RequestParam("file") file: MultipartFile
@@ -58,7 +62,17 @@ class ProfileController (private val profileService: ProfileService) {
         val profile = profileService.updateProfilePicture(email, filePath)
         return ResponseEntity.ok(profile)
     }
+
+    @PutMapping("/update-name")
+    fun updateName(@RequestBody request: UpdateNameRequest): ResponseEntity<String> {
+        val email = SecurityContextHolder.getContext().authentication?.name
+            ?: throw RuntimeException("Not authenticated")
+
+        profileService.updateName(email, request.name)
+        return ResponseEntity.ok("Name updated successfully")
+    }
 }
+data class UpdateNameRequest(val name: String)
 data class CreateProfileRequest(
     val bio: String?,
     val genres: List<Genre>
