@@ -4,7 +4,7 @@ import com.controlled_feed.backend.auth.model.User
 import jakarta.persistence.*
 
 enum class Genre {
-    F1, CRICKET
+    F1, CRICKET, FOOTBALL, TENNIS, BADMINTON
 }
 
 @Entity

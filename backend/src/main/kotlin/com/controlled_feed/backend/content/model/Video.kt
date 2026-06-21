@@ -2,8 +2,9 @@ package com.controlled_feed.backend.content.model
 import jakarta.persistence.*
 import java.io.Serializable
 
+
 enum class VideoCategory {
-    F1,CRICKET
+    F1, CRICKET, FOOTBALL, TENNIS, BADMINTON, MIXED
 }
 @Entity
 @Table(name = "videos",
