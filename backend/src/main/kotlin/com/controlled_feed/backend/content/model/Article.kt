@@ -19,5 +19,6 @@ data class Article (
     val publishedAt: String = "",
     val source: String = "",
     @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 20)  // ← add length
     val category: VideoCategory = VideoCategory.F1
 ): Serializable
