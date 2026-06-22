@@ -31,6 +31,6 @@ data class Profile(
     @Enumerated(EnumType.STRING)
     @ElementCollection
     @CollectionTable(name = "profile_genres", joinColumns = [JoinColumn(name = "profile_id")])
-    @Column(name = "genre")
+    @Column(name = "genre",length = 20)
     val genres: List<Genre> = emptyList()
 )

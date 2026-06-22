@@ -16,21 +16,32 @@ import org.springframework.stereotype.Service
 class FeedService(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
-    private val videoRepository: VideoRepository) {
+    private val videoRepository: VideoRepository
+) {
+    // Existing: paginated feed by user genres
     @Cacheable(value = ["feed"], key = "#email + '-' + #page + '-' + #size")
-    fun getFeed(email: String,page:Int,size:Int): List<Video> {
-        val user=userRepository.findByEmail(email)
-            .orElseThrow{ ResourceNotFoundException("User not found!") }
+    fun getFeed(email: String, page: Int, size: Int): List<Video> {
+        val user = userRepository.findByEmail(email)
+            .orElseThrow { ResourceNotFoundException("User not found!") }
         val profile = profileRepository.findByUserId(user.id)
-            .orElseThrow{ResourceNotFoundException("Profile not found!")}
-        val genre = profile.genres.map{genre ->
-            VideoCategory.valueOf(genre.name)
-        }
-        val pageable = PageRequest.of(page,size, Sort.by("publishedAt").descending())
-        return videoRepository.findByCategoryIn(genre, pageable)
+            .orElseThrow { ResourceNotFoundException("Profile not found!") }
+        val genres = profile.genres.map { VideoCategory.valueOf(it.name) }
+        val pageable = PageRequest.of(page, size, Sort.by("publishedAt").descending())
+        return videoRepository.findByCategoryIn(genres, pageable)
     }
+
+    // NEW: paginated feed by specific category — fixes frontend pagination bug
+    fun getVideosByCategory(category: VideoCategory, page: Int, size: Int): List<Video> {
+        val pageable = PageRequest.of(page, size, Sort.by("publishedAt").descending())
+        return videoRepository.findByCategory(category, pageable)
+    }
+
+    // NEW: random mix across all categories
+    fun getRandomFeed(size: Int): List<Video> {
+        val all = videoRepository.findAll()
+        return all.shuffled().take(size)
+    }
+
     @CacheEvict(value = ["feed"], allEntries = true)
-    fun clearFeedCache() {
-        // Clears all feed cache
-    }
+    fun clearFeedCache() {}
 }

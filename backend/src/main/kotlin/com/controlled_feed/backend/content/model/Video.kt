@@ -9,18 +9,18 @@ enum class VideoCategory {
 @Entity
 @Table(name = "videos",
     indexes = [
-        Index(name="idx_video_category", columnList = "category"),
+        Index(name = "idx_video_category",     columnList = "category"),
         Index(name = "idx_video_published_at", columnList = "publishedAt"),
-        Index(name="idx_video_id",columnList = "videoId",unique = true)
+        Index(name = "idx_video_id",           columnList = "videoId", unique = true),
+        Index(name = "idx_video_channel_id",   columnList = "channelId"),
     ]
 )
-data class Video (
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long=0,
-    @Column(nullable = false , unique=true)
+data class Video(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long = 0,
+    @Column(nullable = false, unique = true)
     val videoId: String = "",
-    @Column(nullable=false)
+    @Column(nullable = false)
     val title: String = "",
     @Column(columnDefinition = "TEXT")
     val description: String = "",
@@ -30,7 +30,9 @@ data class Video (
     val publishedAt: String = "",
     @Column(nullable = false)
     val channelTitle: String = "",
+    @Column(nullable = false)
+    val channelId: String = "",          // NEW — needed for per-channel pruning
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val category: VideoCategory = VideoCategory.F1
-): Serializable
+) : Serializable
