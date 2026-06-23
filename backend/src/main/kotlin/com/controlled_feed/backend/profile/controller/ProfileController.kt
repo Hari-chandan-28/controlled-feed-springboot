@@ -2,6 +2,8 @@ package com.controlled_feed.backend.profile.controller
 import com.controlled_feed.backend.profile.model.Genre
 import com.controlled_feed.backend.profile.model.Profile
 import com.controlled_feed.backend.profile.service.ProfileService
+import com.fasterxml.jackson.annotation.JsonSetter
+import com.fasterxml.jackson.annotation.Nulls
 import org.springframework.http.RequestEntity
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -78,6 +80,7 @@ data class CreateProfileRequest(
     val genres: List<Genre>
 )
 data class ProfileUpdateRequest(
-    val bio: String = "",
-    val genres: List<Genre> = emptyList()
+    val bio: String? = null,
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    val genres: List<Genre> = emptyList()  // ← default prevents null crash
 )
