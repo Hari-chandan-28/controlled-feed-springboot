@@ -33,6 +33,6 @@ data class Video(
     @Column(nullable = false)
     val channelId: String = "",          // NEW — needed for per-channel pruning
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)  // ← add length = 20
     val category: VideoCategory = VideoCategory.F1
 ) : Serializable
