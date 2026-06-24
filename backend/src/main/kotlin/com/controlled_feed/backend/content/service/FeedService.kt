@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 
 @Service
@@ -38,7 +39,14 @@ class FeedService(
 
     // NEW: random mix across all categories
     fun getRandomFeed(size: Int): List<Video> {
-        val all = videoRepository.findAll()
+        val email = SecurityContextHolder.getContext().authentication?.name
+            ?: throw RuntimeException("Not authenticated")
+        val user = userRepository.findByEmail(email)
+            .orElseThrow { ResourceNotFoundException("User not found!") }
+        val profile = profileRepository.findByUserId(user.id)
+            .orElseThrow { ResourceNotFoundException("Profile not found!") }
+        val genres = profile.genres.map { VideoCategory.valueOf(it.name) }
+        val all = videoRepository.findByCategoryIn(genres)
         return all.shuffled().take(size)
     }
 

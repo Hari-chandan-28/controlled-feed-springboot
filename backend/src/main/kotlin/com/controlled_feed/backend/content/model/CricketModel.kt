@@ -20,13 +20,20 @@ data class CricketScore(
     val overs:Double=0.0
 ): Serializable
 data class CricketScorecard(
-    val matchId:String="",
-    val name:String="",
-    val status:String="",
-    val venue:String="",
-    val batting:List<BattingEntry> = emptyList(),
-    val bowling:List<BowlingEntry> = emptyList(),
-): Serializable
+    val matchId: String = "",
+    val name: String = "",
+    val status: String = "",
+    val venue: String = "",
+    val innings: List<InningsEntry> = emptyList(),  // NEW — per innings
+    val batting: List<BattingEntry> = emptyList(),  // keep for backward compat
+    val bowling: List<BowlingEntry> = emptyList()   // keep for backward compat
+) : Serializable
+data class InningsEntry(
+    val inningsName: String = "",
+    val batting: List<BattingEntry> = emptyList(),
+    val bowling: List<BowlingEntry> = emptyList()
+) : Serializable
+
 data class BattingEntry(
     val player: String = "",
     val runs: Int = 0,

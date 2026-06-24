@@ -5,6 +5,7 @@ import com.controlled_feed.backend.content.model.BowlingEntry
 import com.controlled_feed.backend.content.model.CricketMatch
 import com.controlled_feed.backend.content.model.CricketScore
 import com.controlled_feed.backend.content.model.CricketScorecard
+import com.controlled_feed.backend.content.model.InningsEntry
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import org.apache.coyote.Response
 import org.slf4j.LoggerFactory
@@ -119,56 +120,87 @@ class CricketService {
         }
     }
     @Suppress("UNCHECKED_CAST")
-    private fun extractScorecard(response: Map<*,*>?, matchId: String): CricketScorecard {
-        val data = response?.get("data") as? Map<*, *> ?: return CricketScorecard(matchId = matchId)
-        val scorecard = data["scorecard"] as? List<*> ?: emptyList<Any>()
+    private fun extractScorecard(response: Map<*, *>?, matchId: String): CricketScorecard {
+        val data = response?.get("data") as? Map<*, *>
+            ?: return CricketScorecard(matchId = matchId)
+        val scorecardRaw = data["scorecard"] as? List<*> ?: emptyList<Any>()
 
         val battingList = mutableListOf<BattingEntry>()
         val bowlingList = mutableListOf<BowlingEntry>()
+        val inningsList = mutableListOf<InningsEntry>()
 
-        scorecard.forEach { innings ->
+        scorecardRaw.forEach { innings ->
             val inn = innings as? Map<*, *> ?: return@forEach
+            val inningsName = inn["inningsName"]?.toString()
+                ?: inn["innings"]?.toString()
+                ?: "Innings ${inningsList.size + 1}"
 
-            // Batting
-            val batting = inn["batting"] as? List<*> ?: emptyList<Any>()
-            batting.forEach { batsman ->
-                val b = batsman as? Map<*, *> ?: return@forEach
-                battingList.add(
-                    BattingEntry(
-                        player = b["batsman"]?.toString() ?: "",
-                        runs = (b["r"] as? Int) ?: 0,
-                        balls = (b["b"] as? Int) ?: 0,
-                        fours = (b["4s"] as? Int) ?: 0,
-                        sixes = (b["6s"] as? Int) ?: 0,
-                        strikeRate = (b["sr"] as? Number)?.toDouble() ?: 0.0,
-                        dismissal = b["dismissal"]?.toString() ?: "not out"
-                    )
+            // Batting for this innings
+            val battingRaw = inn["batting"] as? List<*> ?: emptyList<Any>()
+            val inningsBatting = battingRaw.mapNotNull { batsman ->
+                val b = batsman as? Map<*, *> ?: return@mapNotNull null
+                BattingEntry(
+                    player = extractPlayerName(b["batsman"]),
+                    runs = (b["r"] as? Int) ?: 0,
+                    balls = (b["b"] as? Int) ?: 0,
+                    fours = (b["4s"] as? Int) ?: 0,
+                    sixes = (b["6s"] as? Int) ?: 0,
+                    strikeRate = (b["sr"] as? Number)?.toDouble() ?: 0.0,
+                    dismissal = b["dismissal"]?.toString() ?: "not out"
                 )
             }
 
-            // Bowling
-            val bowling = inn["bowling"] as? List<*> ?: emptyList<Any>()
-            bowling.forEach { bowler ->
-                val b = bowler as? Map<*, *> ?: return@forEach
-                bowlingList.add(
-                    BowlingEntry(
-                        player = b["bowler"]?.toString() ?: "",
-                        overs = (b["o"] as? Number)?.toDouble() ?: 0.0,
-                        maidens = (b["m"] as? Int) ?: 0,
-                        runs = (b["r"] as? Int) ?: 0,
-                        wickets = (b["w"] as? Int) ?: 0,
-                        economy = (b["eco"] as? Number)?.toDouble() ?: 0.0
-                    )
+            // Bowling for this innings
+            val bowlingRaw = inn["bowling"] as? List<*> ?: emptyList<Any>()
+            val inningsBowling = bowlingRaw.mapNotNull { bowler ->
+                val b = bowler as? Map<*, *> ?: return@mapNotNull null
+                BowlingEntry(
+                    player = extractPlayerName(b["bowler"]),
+                    overs = (b["o"] as? Number)?.toDouble() ?: 0.0,
+                    maidens = (b["m"] as? Int) ?: 0,
+                    runs = (b["r"] as? Int) ?: 0,
+                    wickets = (b["w"] as? Int) ?: 0,
+                    economy = (b["eco"] as? Number)?.toDouble() ?: 0.0
                 )
             }
+
+            inningsList.add(InningsEntry(
+                inningsName = inningsName,
+                batting = inningsBatting,
+                bowling = inningsBowling
+            ))
+
+            // Also keep flat lists for backward compat
+            battingList.addAll(inningsBatting)
+            bowlingList.addAll(inningsBowling)
         }
+
         return CricketScorecard(
             matchId = matchId,
             name = data["name"]?.toString() ?: "",
             status = data["status"]?.toString() ?: "",
             venue = data["venue"]?.toString() ?: "",
+            innings = inningsList,
             batting = battingList,
             bowling = bowlingList
         )
+    }
+    // Add this helper inside CricketService class
+    private fun extractPlayerName(player: Any?): String {
+        if (player == null) return ""
+        // If it's already a plain string (not an object), return as-is
+        if (player is String) {
+            // Handle the toString() case: "{id=..., name=Musaddiq Ahmed, cricbuzz_id=...}"
+            if (player.contains("name=")) {
+                val match = Regex("name=([^,}]+)").find(player)
+                return match?.groupValues?.get(1)?.trim() ?: player
+            }
+            return player
+        }
+        // If it's a Map object, extract the name field directly
+        if (player is Map<*, *>) {
+            return player["name"]?.toString() ?: player.toString()
+        }
+        return player.toString()
     }
 }

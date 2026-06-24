@@ -13,4 +13,5 @@ interface VideoRepository : JpaRepository<Video, Long> {
     fun findByCategory(category: VideoCategory, pageable: Pageable): List<Video>
     fun findByChannelIdOrderByPublishedAtDesc(channelId: String): List<Video>
     fun countByCategory(category: VideoCategory): Long
+    fun findByCategoryIn(categories: List<VideoCategory>): List<Video>
 }
