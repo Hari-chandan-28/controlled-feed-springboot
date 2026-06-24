@@ -44,4 +44,7 @@ class FeedService(
 
     @CacheEvict(value = ["feed"], allEntries = true)
     fun clearFeedCache() {}
+
+    @CacheEvict(value = ["article-feed"], allEntries = true)
+    fun clearArticleCache() {}
 }
