@@ -51,6 +51,8 @@ class RedisConfig {
             "f1-live-positions" to defaultConfig.entryTtl(Duration.ofSeconds(4)),
             "f1-live-timing" to defaultConfig.entryTtl(Duration.ofSeconds(4)),
             "f1-live-intervals" to defaultConfig.entryTtl(Duration.ofSeconds(4)),
+            // F1 race details and schedules
+            "f1-race-detail" to defaultConfig.entryTtl(Duration.ofDays(1)),
 
             "article-feed" to defaultConfig.entryTtl(Duration.ofMinutes(5)),
             "feed" to defaultConfig.entryTtl(Duration.ofMinutes(5)),

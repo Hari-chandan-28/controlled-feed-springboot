@@ -331,6 +331,7 @@ class F1DashboardService {
         }
     }
     // Get full detail for one race (completed or upcoming)
+    @Cacheable(value = ["f1-race-detail"], key = "#season + '-' + #round")
     fun getRaceDetail(season: Int, round: Int): RaceDetail {
         // Fetch results + schedule in parallel
         val resultsResponse = ergastClient.get()
