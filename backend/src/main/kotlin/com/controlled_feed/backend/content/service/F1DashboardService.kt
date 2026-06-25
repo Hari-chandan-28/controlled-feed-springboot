@@ -451,9 +451,10 @@ class F1DashboardService {
                 .minByOrNull { ps ->
                     ps["duration"]?.toString()?.toDoubleOrNull() ?: Double.MAX_VALUE
                 } ?: return null
-
+            val name =fastest["driverId"]?.toString() ?: ""
+            val fullname = extractFullName(name = name)
             PitStopEntry(
-                driverName = fastest["driverId"]?.toString() ?: "",
+                driverName = fullname,
                 lap = fastest["lap"]?.toString() ?: "",
                 duration = fastest["duration"]?.toString() ?: "",
                 stop = fastest["stop"]?.toString() ?: ""
@@ -699,5 +700,42 @@ class F1DashboardService {
                 time = r["time"]?.toString() ?: ""
             )
         }
+    }
+    fun extractFullName(name : String):String{
+        val driverNameMap = mapOf(
+            "verstappen" to "Max Verstappen",
+            "hadjar" to "Isack Hadjar",
+
+            "norris" to "Lando Norris",
+            "piastri" to "Oscar Piastri",
+
+            "leclerc" to "Charles Leclerc",
+            "hamilton" to "Lewis Hamilton",
+
+            "russell" to "George Russell",
+            "antonelli" to "Kimi Antonelli",
+
+            "albon" to "Alexander Albon",
+            "sainz" to "Carlos Sainz",
+
+            "alonso" to "Fernando Alonso",
+            "stroll" to "Lance Stroll",
+
+            "hulkenberg" to "Nico Hülkenberg",
+            "bortoleto" to "Gabriel Bortoleto",
+
+            "gasly" to "Pierre Gasly",
+            "colapinto" to "Franco Colapinto",
+
+            "ocon" to "Esteban Ocon",
+            "bearman" to "Oliver Bearman",
+
+            "lawson" to "Liam Lawson",
+            "lindblad" to "Arvid Lindblad",
+
+            "perez" to "Sergio Pérez",
+            "bottas" to "Valtteri Bottas"
+        )
+        return driverNameMap[name]?:name;
     }
 }
