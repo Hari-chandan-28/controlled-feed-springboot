@@ -107,4 +107,12 @@ class F1DashboardController(
 
         return emitter
     }
+    //schedule
+    @GetMapping("/race/{season}/{round}")
+    fun getRaceDetail(
+        @PathVariable season: Int,
+        @PathVariable round: Int
+    ): ResponseEntity<RaceDetail> {
+        return ResponseEntity.ok(dashboardService.getRaceDetail(season, round))
+    }
 }

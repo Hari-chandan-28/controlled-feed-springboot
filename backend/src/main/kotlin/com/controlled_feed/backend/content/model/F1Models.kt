@@ -58,3 +58,44 @@ data class ConstructorStanding(
     val wins: String = "",
     val podiums: Int = 0
 ): Serializable
+
+//new Model for Scheduling
+
+data class RaceDetail(
+    val raceName: String = "",
+    val round: String = "",
+    val date: String = "",
+    val circuit: String = "",
+    val country: String = "",
+    // Completed race data
+    val podium: List<PodiumEntry> = emptyList(),
+    val fastestLap: FastestLapEntry? = null,
+    val fastestPitStop: PitStopEntry? = null,
+    // Upcoming race session times (UTC)
+    val sessions: List<SessionTime> = emptyList(),
+    val hasSprint: Boolean = false
+): Serializable
+data class PodiumEntry(
+    val position: Int = 0,
+    val driverName: String = "",
+    val team: String = "",
+    val time: String = "",
+    val points: String = ""
+): Serializable
+data class FastestLapEntry(
+    val driverName: String = "",
+    val team: String = "",
+    val lapTime: String = "",
+    val lapNumber: String = ""
+): Serializable
+data class PitStopEntry(
+    val driverName: String = "",
+    val lap: String = "",
+    val duration: String = "",
+    val stop: String = ""
+): Serializable
+data class SessionTime(
+    val name: String = "",    // "FP1", "FP2", "FP3", "Qualifying", "Sprint", "Race"
+    val date: String = "",    // UTC date
+    val time: String = ""     // UTC time e.g. "05:00:00Z"
+): Serializable

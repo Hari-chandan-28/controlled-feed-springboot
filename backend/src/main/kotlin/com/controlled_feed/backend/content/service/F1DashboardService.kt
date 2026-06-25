@@ -330,6 +330,179 @@ class F1DashboardService {
             mapOf("circuitKey" to null, "year" to null, "meetingKey" to null)
         }
     }
+    // Get full detail for one race (completed or upcoming)
+    fun getRaceDetail(season: Int, round: Int): RaceDetail {
+        // Fetch results + schedule in parallel
+        val resultsResponse = ergastClient.get()
+            .uri("/$season/$round/results.json")
+            .retrieve()
+            .bodyToMono(Map::class.java)
+            .block()
+
+        val scheduleResponse = ergastClient.get()
+            .uri("/$season/$round.json")
+            .retrieve()
+            .bodyToMono(Map::class.java)
+            .block()
+
+        val race = extractRaceFromSchedule(scheduleResponse)
+        val results = extractResultsFromResponse(resultsResponse)
+        val fastestLap = extractFastestLap(resultsResponse)
+        val sessions = extractSessions(scheduleResponse)
+        val hasSprint = sessions.any { it.name == "Sprint" }
+
+        // Only fetch pit stops for completed races (results exist)
+        val fastestPitStop = if (results.isNotEmpty()) {
+            fetchFastestPitStop(season, round)
+        } else null
+
+        return RaceDetail(
+            raceName = race["raceName"]?.toString() ?: "",
+            round = round.toString(),
+            date = race["date"]?.toString() ?: "",
+            circuit = (race["Circuit"] as? Map<*, *>)?.get("circuitName")?.toString() ?: "",
+            country = ((race["Circuit"] as? Map<*, *>)
+                ?.get("Location") as? Map<*, *>)
+                ?.get("country")?.toString() ?: "",
+            podium = results.take(3),
+            fastestLap = fastestLap,
+            fastestPitStop = fastestPitStop,
+            sessions = sessions,
+            hasSprint = hasSprint
+        )
+    }
+
+    private fun extractRaceFromSchedule(response: Map<*, *>?): Map<*, *> {
+        val mrData = response?.get("MRData") as? Map<*, *> ?: return emptyMap<String, Any>()
+        val raceTable = mrData["RaceTable"] as? Map<*, *> ?: return emptyMap<String, Any>()
+        val races = raceTable["Races"] as? List<*> ?: return emptyMap<String, Any>()
+        return (races.firstOrNull() as? Map<*, *>) ?: emptyMap<String, Any>()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun extractResultsFromResponse(response: Map<*, *>?): List<PodiumEntry> {
+        val mrData = response?.get("MRData") as? Map<*, *> ?: return emptyList()
+        val raceTable = mrData["RaceTable"] as? Map<*, *> ?: return emptyList()
+        val races = raceTable["Races"] as? List<*> ?: return emptyList()
+        val race = races.firstOrNull() as? Map<*, *> ?: return emptyList()
+        val results = race["Results"] as? List<*> ?: return emptyList()
+
+        return results.mapNotNull { result ->
+            val r = result as? Map<*, *> ?: return@mapNotNull null
+            val driver = r["Driver"] as? Map<*, *> ?: return@mapNotNull null
+            val constructor = r["Constructor"] as? Map<*, *>
+            val pos = r["position"]?.toString()?.toIntOrNull() ?: return@mapNotNull null
+            val time = (r["Time"] as? Map<*, *>)?.get("time")?.toString()
+                ?: r["status"]?.toString() ?: ""
+            PodiumEntry(
+                position = pos,
+                driverName = "${driver["givenName"]} ${driver["familyName"]}",
+                team = constructor?.get("name")?.toString() ?: "",
+                time = time,
+                points = r["points"]?.toString() ?: "0"
+            )
+        }
+    }
+
+    private fun extractFastestLap(response: Map<*, *>?): FastestLapEntry? {
+        val mrData = response?.get("MRData") as? Map<*, *> ?: return null
+        val raceTable = mrData["RaceTable"] as? Map<*, *> ?: return null
+        val races = raceTable["Races"] as? List<*> ?: return null
+        val race = races.firstOrNull() as? Map<*, *> ?: return null
+        val results = race["Results"] as? List<*> ?: return null
+
+        // Find result with FastestLap rank = 1
+        val fastestResult = results.mapNotNull { it as? Map<*, *> }
+            .firstOrNull { r ->
+                val fl = r["FastestLap"] as? Map<*, *>
+                fl?.get("rank")?.toString() == "1"
+            } ?: return null
+
+        val driver = fastestResult["Driver"] as? Map<*, *> ?: return null
+        val constructor = fastestResult["Constructor"] as? Map<*, *>
+        val fastestLap = fastestResult["FastestLap"] as? Map<*, *> ?: return null
+        val lapTime = (fastestLap["Time"] as? Map<*, *>)?.get("time")?.toString() ?: ""
+
+        return FastestLapEntry(
+            driverName = "${driver["givenName"]} ${driver["familyName"]}",
+            team = constructor?.get("name")?.toString() ?: "",
+            lapTime = lapTime,
+            lapNumber = fastestLap["lap"]?.toString() ?: ""
+        )
+    }
+
+    private fun fetchFastestPitStop(season: Int, round: Int): PitStopEntry? {
+        return try {
+            val response = ergastClient.get()
+                .uri("/$season/$round/pitstops.json?limit=100")
+                .retrieve()
+                .bodyToMono(Map::class.java)
+                .block()
+
+            val mrData = response?.get("MRData") as? Map<*, *> ?: return null
+            val raceTable = mrData["RaceTable"] as? Map<*, *> ?: return null
+            val races = raceTable["Races"] as? List<*> ?: return null
+            val race = races.firstOrNull() as? Map<*, *> ?: return null
+            val pitStops = race["PitStops"] as? List<*> ?: return null
+
+            // Find shortest duration pit stop
+            val fastest = pitStops
+                .mapNotNull { it as? Map<*, *> }
+                .minByOrNull { ps ->
+                    ps["duration"]?.toString()?.toDoubleOrNull() ?: Double.MAX_VALUE
+                } ?: return null
+
+            PitStopEntry(
+                driverName = fastest["driverId"]?.toString() ?: "",
+                lap = fastest["lap"]?.toString() ?: "",
+                duration = fastest["duration"]?.toString() ?: "",
+                stop = fastest["stop"]?.toString() ?: ""
+            )
+        } catch (e: Exception) {
+            logger.warn("Could not fetch pit stops: ${e.message}")
+            null
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun extractSessions(response: Map<*, *>?): List<SessionTime> {
+        val mrData = response?.get("MRData") as? Map<*, *> ?: return emptyList()
+        val raceTable = mrData["RaceTable"] as? Map<*, *> ?: return emptyList()
+        val races = raceTable["Races"] as? List<*> ?: return emptyList()
+        val race = races.firstOrNull() as? Map<*, *> ?: return emptyList()
+
+        val sessions = mutableListOf<SessionTime>()
+
+        // Map Ergast field names to display names
+        val sessionFields = listOf(
+            "FirstPractice"  to "FP1",
+            "SecondPractice" to "FP2",
+            "ThirdPractice"  to "FP3",
+            "SprintQualifying" to "Sprint Qualifying",
+            "Sprint"         to "Sprint",
+            "Qualifying"     to "Qualifying",
+        )
+
+        sessionFields.forEach { (field, name) ->
+            val session = race[field] as? Map<*, *>
+            if (session != null) {
+                sessions.add(SessionTime(
+                    name = name,
+                    date = session["date"]?.toString() ?: "",
+                    time = session["time"]?.toString() ?: ""
+                ))
+            }
+        }
+
+        // Race itself
+        sessions.add(SessionTime(
+            name = "Race",
+            date = race["date"]?.toString() ?: "",
+            time = race["time"]?.toString() ?: ""
+        ))
+
+        return sessions.filter { it.date.isNotEmpty() }
+    }
 
     // ───────────── Circuit breaker fallbacks (unchanged) ─────────────
 
