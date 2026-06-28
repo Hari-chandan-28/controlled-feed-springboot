@@ -19,7 +19,7 @@ class AuthController(
                 email = request.email,
                 password = request.password
             )
-        return ResponseEntity.ok(AuthResponse(token))
+        return  ResponseEntity.ok(AuthResponse(token))
     }
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<Any>
