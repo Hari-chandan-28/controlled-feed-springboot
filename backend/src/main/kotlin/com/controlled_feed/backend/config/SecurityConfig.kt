@@ -61,7 +61,8 @@ class SecurityConfig(
             "http://localhost:3000",  // Docker frontend
             "http://localhost:5173" ,
             "https://sportiva.vercel.app",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "https://controlled-feed-frontend.vercel.app"
             // Local dev frontend
         )
         config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
