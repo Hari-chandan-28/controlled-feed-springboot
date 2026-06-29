@@ -36,4 +36,5 @@ build/
 .vscode/
 # Uploads
 uploads/
-
+!uploads/.gitkeep
+!uploads/profile-pictures/.gitkeep
