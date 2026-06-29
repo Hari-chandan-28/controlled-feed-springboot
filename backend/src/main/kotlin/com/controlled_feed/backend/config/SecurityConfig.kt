@@ -5,6 +5,7 @@ import com.controlled_feed.backend.common.RateLimitFilter
 import jakarta.servlet.Filter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -39,6 +40,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests {
                 it
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/api/auth/signup").permitAll()
                     .requestMatchers("/api/auth/login").permitAll()
                     .requestMatchers("/error").permitAll()
@@ -60,8 +62,6 @@ class SecurityConfig(
         config.allowedOrigins = listOf(
             "http://localhost:3000",  // Docker frontend
             "http://localhost:5173" ,
-            "https://sportiva.vercel.app",
-            "https://*.vercel.app",
             "https://controlled-feed-frontend.vercel.app"
             // Local dev frontend
         )
