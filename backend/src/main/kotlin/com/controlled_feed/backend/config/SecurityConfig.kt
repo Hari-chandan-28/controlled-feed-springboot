@@ -59,7 +59,10 @@ class SecurityConfig(
         val config = CorsConfiguration()
         config.allowedOrigins = listOf(
             "http://localhost:3000",  // Docker frontend
-            "http://localhost:5173"   // Local dev frontend
+            "http://localhost:5173" ,
+            "https://sportiva.vercel.app",
+            "https://*.vercel.app"
+            // Local dev frontend
         )
         config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
         config.allowedHeaders = listOf("*")
