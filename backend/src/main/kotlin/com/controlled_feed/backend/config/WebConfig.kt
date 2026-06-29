@@ -7,8 +7,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 @Configuration
 class WebConfig : WebMvcConfigurer {
 
-    override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
-        registry.addResourceHandler("/uploads/**")
-            .addResourceLocations("file:uploads/")
+        override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
+            val baseDir = object {}.javaClass.protectionDomain.codeSource.location
+                .toURI().let { java.io.File(it) }
+                .parentFile  // target/classes → target
+                ?.parentFile // target → backend
+                ?: java.io.File(System.getProperty("user.dir"))
+            val uploadPath = java.io.File(baseDir, "uploads/").absolutePath
+            registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:$uploadPath/")
     }
 }

@@ -4,13 +4,10 @@ import com.controlled_feed.backend.profile.model.Profile
 import com.controlled_feed.backend.profile.service.ProfileService
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
-import org.springframework.http.RequestEntity
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.io.File
 
 @RestController
 @RequestMapping("/api/profile")
@@ -48,19 +45,37 @@ class ProfileController (private val profileService: ProfileService) {
     @PostMapping("/upload-picture")
     fun uploadProfilePicture(
         @RequestParam("file") file: MultipartFile
-    ): ResponseEntity<Profile> {
+    ): ResponseEntity<Any> {
         val email = SecurityContextHolder.getContext().authentication?.name
             ?: throw RuntimeException("Not authenticated")
 
-        // Use absolute path
-        val uploadDir = File(System.getProperty("user.dir") + "/uploads/profile-pictures")
+        val isProduction = System.getenv("RAILWAY_ENVIRONMENT") != null
+        if (isProduction) {
+            return ResponseEntity.status(503).body(
+                mapOf("message" to "Profile picture upload not available in production.")
+            )
+        }
+
+        // Use the location of the running jar/classes to find uploads folder
+        // This resolves to backend/uploads/ regardless of where IntelliJ runs from
+        val baseDir = object {}.javaClass.protectionDomain.codeSource.location
+            .toURI().let { java.io.File(it) }
+            .parentFile  // target/classes → target
+            ?.parentFile // target → backend
+            ?: java.io.File(System.getProperty("user.dir"))
+
+        val uploadDir = java.io.File(baseDir, "uploads/profile-pictures")
         if (!uploadDir.exists()) uploadDir.mkdirs()
 
-        val fileName = "${System.currentTimeMillis()}_${file.originalFilename}"
-        val destFile = File(uploadDir, fileName)
+        val originalName = file.originalFilename ?: "photo.jpg"
+        val extension = originalName.substringAfterLast(".", "jpg")
+        val sanitizedFileName = "${System.currentTimeMillis()}_profile.$extension"
+
+        val destFile = java.io.File(uploadDir, sanitizedFileName)
         file.transferTo(destFile.absoluteFile)
 
-        val filePath = "uploads/profile-pictures/$fileName"
+        // Store relative path for serving via /uploads/** URL
+        val filePath = "uploads/profile-pictures/$sanitizedFileName"
         val profile = profileService.updateProfilePicture(email, filePath)
         return ResponseEntity.ok(profile)
     }

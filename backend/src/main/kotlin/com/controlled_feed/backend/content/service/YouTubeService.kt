@@ -14,7 +14,6 @@ import org.springframework.web.reactive.function.client.WebClient
 class YouTubeService(
     private val videoRepository: VideoRepository,
     private val objectMapper: ObjectMapper,
-    private val videoEventProducer: VideoEventProducer
 ) {
     private val logger = LoggerFactory.getLogger(YouTubeService::class.java)
 
@@ -267,7 +266,6 @@ class YouTubeService(
                     category = resolvedCategory
                 )
                 savedVideos.add(videoRepository.save(video))
-                videoEventProducer.sendNewVideoEvent(videoId, resolvedCategory.name)
                 logger.info("✅ Saved: $title [$resolvedCategory]")
             }
         } catch (e: Exception) {
