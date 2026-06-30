@@ -13,6 +13,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.net.URL
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
 
 @Service
 class RssFeedService(
@@ -54,11 +58,11 @@ class RssFeedService(
         }
     }
 
-    // ── Prune: keep 20 newest per source ──────────────────────
+    // ── Prune: keep 10 newest per source ──────────────────────
     private fun pruneOldArticles(source: String) {
         val allForSource = articleRepository.findBySourceOrderByPublishedAtDesc(source)
-        if (allForSource.size > 20) {
-            val toDelete = allForSource.drop(20)
+        if (allForSource.size > 10) {
+            val toDelete = allForSource.drop(10)
             articleRepository.deleteAll(toDelete)
             logger.info("🗑️ Pruned ${toDelete.size} old articles from $source")
         }
@@ -87,7 +91,7 @@ class RssFeedService(
                     description = entry.description?.value ?: "",
                     link = entry.link ?: "",
                     imageUrl = imgUrl,
-                    publishedAt = entry.publishedDate?.toString() ?: "",
+                    publishedAt = toIso8601(entry.publishedDate.toString()),
                     source = source,
                     category = category
                 )
@@ -116,5 +120,16 @@ class RssFeedService(
         val categories = profile.genres.map { VideoCategory.valueOf(it.name) }
         logger.info("📰 Fetching articles for: $categories")
         return articleRepository.findByCategoryIn(categories)
+    }
+
+    fun toIso8601(dateString: String): String {
+        val inputFormatter = DateTimeFormatter.ofPattern(
+            "EEE MMM dd HH:mm:ss z yyyy",
+            Locale.ENGLISH
+        )
+
+        val zonedDateTime = ZonedDateTime.parse(dateString, inputFormatter)
+
+        return zonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     }
 }

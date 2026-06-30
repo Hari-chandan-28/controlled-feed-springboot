@@ -170,7 +170,7 @@ class YouTubeService(
                     .queryParam("key", apiKey)
                     .queryParam("playlistId", playlistId)
                     .queryParam("part", "snippet")
-                    .queryParam("maxResults", 20)
+                    .queryParam("maxResults", 10)
                     .build()
             }
             .retrieve()
@@ -276,11 +276,11 @@ class YouTubeService(
 
     // ── Prune: keep 20 newest per channel ─────────────────
     private fun pruneOldVideos(channelId: String) {
-        val all = videoRepository.findByChannelIdOrderByPublishedAtDesc(channelId)
-        if (all.size > 20) {
-            val toDelete = all.drop(20)
+        val allForChannel = videoRepository.findByChannelIdOrderByPublishedAtDesc(channelId)
+        if (allForChannel.size > 10) {  // changed from 20 to 10
+            val toDelete = allForChannel.drop(10)
             videoRepository.deleteAll(toDelete)
-            logger.info("🗑️ Pruned ${toDelete.size} old videos for $channelId")
+            logger.info("🗑️ Pruned ${toDelete.size} old videos for channel $channelId")
         }
     }
 
