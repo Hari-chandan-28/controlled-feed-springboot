@@ -8,12 +8,14 @@ import com.controlled_feed.backend.profile.model.Profile
 import com.controlled_feed.backend.profile.repository.ProfileRepository
 import org.springframework.stereotype.Service
 import com.controlled_feed.backend.profile.controller.ProfileUpdateRequest
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 
 @Service
 class ProfileService(private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,private val feedService: FeedService
 ) {
+    val logger = LoggerFactory.getLogger(ProfileService::class.java)
     fun createProfile(email: String,bio : String?,genres: List<Genre>): Profile {
         val user = userRepository.findByEmail(email)
             .orElseThrow { ResourceNotFoundException("User not found!") }
@@ -55,6 +57,25 @@ class ProfileService(private val profileRepository: ProfileRepository,
         .orElseThrow { ResourceNotFoundException("User not found!") }
         val profile = profileRepository.findByUserId(user.id)
         .orElseThrow { ResourceNotFoundException("Profile not found!")}
+
+
+        val oldRelativePath = profile.profilePicturePath
+        if (!oldRelativePath.isNullOrBlank()) {
+            try {
+                // Same base dir resolution as controller
+                val baseDir = java.io.File(System.getProperty("user.dir"))
+
+                val oldFile = java.io.File(baseDir, oldRelativePath)
+                if (oldFile.exists()) {
+                    oldFile.delete()
+                    logger.info("🗑️ Deleted old profile picture: ${oldFile.absolutePath}")
+                } else {
+                    logger.warn("Old profile picture not found at: ${oldFile.absolutePath}")
+                }
+            } catch (e: Exception) {
+                logger.warn("Could not delete old profile picture: ${e.message}")
+            }
+        }
 
         val updatedProfile = profile.copy(profilePicturePath = picturePath)
         return profileRepository.save(updatedProfile)
