@@ -9,12 +9,12 @@ import java.io.File
 class WebConfig : WebMvcConfigurer {
 
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
-        val baseDir = object {}.javaClass.protectionDomain.codeSource.location
-            .toURI().let { java.io.File(it) }
-            .parentFile  // target/classes → target
-            ?.parentFile // target → backend
-            ?: java.io.File(System.getProperty("user.dir"))
-        val uploadPath = java.io.File(baseDir, "uploads/").absolutePath
+
+        val uploadPath = System.getenv("UPLOAD_DIR")
+            ?: File("uploads").absolutePath
+
+        File(uploadPath).mkdirs()
+
         registry.addResourceHandler("/uploads/**")
             .addResourceLocations("file:$uploadPath/")
     }
